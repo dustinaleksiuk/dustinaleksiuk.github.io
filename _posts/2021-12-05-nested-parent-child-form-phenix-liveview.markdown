@@ -5,20 +5,20 @@ date:   2021-12-05 10:41:04 -0700
 categories: liveview
 ---
 
-*A special thanks to [Rowland Carlson](https://row.land/), who I met at an Elixir meetup, for taking the time to test the sample app and submit some fixes.*
+*A special thanks to [Rowland Carlson](https://row.land/) for taking the time to discuss the issues I was having, test the sample app, and submit some fixes.*
 ## The Backstory
 
 One of my first tasks recently as a new Elixir and Phoenix LiveView developer was to write a SPA-style form that would allow the user to add and remove child records from a parent and save the changes on a single page with a single save button. The user should also be able to cancel and abandon their changes. 
 
 In other words, I want to add or remove a child row without going to the database until the user clicks the save button. When the user clicks save, all the form changes get saved at once, to both the parent and child table.
 
-It is also important that validation errors show up on the correct row using the built-in functionality provided by the framework. No hackery. I wanted to work with the framework, not around it.
+It is also important that validation errors show up on the correct row using the built-in functionality provided by the framework. No hackery. I wanted to work *with* the framework, not around it.
 
 As a new LiveView user, I found this surprisingly difficult to learn to do. From researching, asking questions, and reading the [Elixir forum](https://elixirforum.com/), I learned I wasn't alone.
 
 ## The Sample App
 
-The sample app is a LiveView website that stores albums and tracks for the album. The edit form lets the user edit the album, and add and remove tracks.
+The [sample app](https://github.com/dustinaleksiuk/recordstore) is a LiveView website that stores albums and tracks for the album. The edit form lets the user edit the album, and add and remove tracks.
 
 ## Key Concepts and Functions
 
@@ -26,7 +26,7 @@ I'll go into more detail below, but these are the key points that opened the doo
 
 #### [LiveView forms](https://hexdocs.pm/phoenix_live_view/form-bindings.html)
 
-In LiveView, you want ONE submit button and ONE changeset for each form. That's just how it works. You can't have an individual submit button per child row because [the event can't tell you what button was pressed](https://github.com/phoenixframework/phoenix_live_view/issues/511#issuecomment-563243927). This is noteworthy because some of us are tempted to put a submit button on each child row, especially since the submit event passes the entire form params back to the event handler.
+In LiveView, you want ONE submit button and ONE changeset for each form. That's just how it works. You can't have an individual submit button per child row because [the event can't tell you what button was pressed](https://github.com/phoenixframework/phoenix_live_view/issues/511#issuecomment-563243927). This is noteworthy because it is tempting to try to put a submit button on each child row, especially since the submit event passes the entire form params back to the event handler.
 
 #### [inputs_for/2](https://hexdocs.pm/phoenix_html/Phoenix.HTML.Form.html#inputs_for/2)
 
@@ -34,13 +34,7 @@ This is the function that lets you nest association data in a form. It is the me
 
 #### [get_field/3](https://hexdocs.pm/ecto/Ecto.Changeset.html#get_field/3)
 
-This little guy is a game changer. I was killing myself to try to get data from the changeset's changes and data fields based on a tutorial I was trying to follow. I swear this function is the best kept secret in Ecto because I asked various people (and read the only tutorial I could find on this problem).
-
-## The Code
-
-[This public github repository](https://github.com/dustinaleksiuk/recordstore) contains my little Record Store app that demonstrates this solution.
-
-I chose to put the fields for the child tracks into their own LiveComponent. This isn't necessary for the solution but I think it makes the code organization a little nicer.
+This little guy is a game changer. I was killing myself to try to get data from the changeset's changes and data fields based on a tutorial I was trying to follow. This function was hiding in plain sight. Its close cousin, [fetch_field/2](https://hexdocs.pm/ecto/Ecto.Changeset.html#fetch_field/2), may also be helpful.
 
 ### Loading the Data
 
@@ -55,7 +49,7 @@ end
 
 ### The Album (Parent) Schema
 
-The parent schema, album, is at `lib/recordstore/albums/album.ex`. I associate the child tracks to the album the usual way:
+The parent schema, album, is at `lib/recordstore/albums/album.ex`. I associate the child tracks to the album the usual way. Note that we do not save the tracks directly. They are both fetched and saved through their parent album.
 
 {% highlight elixir %}
 has_many(:tracks, Track,
@@ -64,7 +58,7 @@ has_many(:tracks, Track,
 )
 {% endhighlight %}
 
-We also need a cast_assoc for the tracks because we will be saving the tracks via the album schema:
+We also need a cast_assoc for the tracks:
 
 {% highlight elixir %}
 def changeset(album, attrs) do
@@ -77,7 +71,7 @@ end
 
 ### The Track (Child) Schema
 
-The tracks are represented by the track schema in `lib/recordstore/albums/track.ex`. The only interesting thing here is a virtual temp_id field. This field will store a temporary ID to allow us to remove tracks that haven't been saved yet.
+The tracks are represented by the track schema in `lib/recordstore/albums/track.ex`. The important part here is a virtual temp_id field. This field will store a temporary ID to allow us to remove tracks that haven't been saved yet.
 
 {% highlight elixir %}
 field :temp_id, :string, virtual: true
@@ -89,7 +83,7 @@ The LiveView file at `lib/recordstore_web/live/album_live/edit.ex` and its assoc
 
 #### Loading the Album
 
-When the form loads and the album is loaded into memory as a struct, I loop through the tracks and set a temp id on each one so that we can remove unsaved tracks.
+When the form loads and the album is loaded into memory as a struct, the first thing I do is loop through the tracks and set a temp id on each one so that we can remove unsaved tracks.
 
 {% highlight elixir %}
 defp preload_temp_ids(album) do
@@ -168,7 +162,7 @@ end
 
 The most important part in this area is to use [inputs_for/2](https://hexdocs.pm/phoenix_html/Phoenix.HTML.Form.html#inputs_for/2) to display the association data. I pulled this part out into a component stored in `tracks_component.html.heex` because it felt cleaner but it's not necessary.
 
-Note the comprehension that loop over the tracks and displays each one. The `phx-click` event and `phx-value-temp-id` attributes for removing a track are seen here, as well as the `phx-click` attribute for adding a track. These bubble up to the LiveView in `edit.ex`.
+Note the comprehension that loops over the tracks and displays each one. The `phx-click` event and `phx-value-temp-id` attributes for removing a track are seen here, as well as the `phx-click` attribute for adding a track. These bubble up to the LiveView in `edit.ex`.
 
 {% highlight jsp %}
 <div>
@@ -197,7 +191,7 @@ Note the comprehension that loop over the tracks and displays each one. The `phx
 
 ## Conclusion
 
-Adding this functionality to our app was my first real task as a brand new LiveView developer. I found it difficult because one has to learn many aspects of LiveView to make it work. I hope that this little writeup saves someone else the headaches I experienced while figuring it all out.
+Adding this functionality to our app was my first real task as a brand new LiveView developer. I found it difficult because one has to learn a bunch of little aspects of LiveView to make it work. I hope that this little writeup saves someone else the headaches I experienced while figuring it all out.
 
 If I've made any embarrassing mistakes or if there is an obviously better way to solve this requirement, I would love to know about it. Please post an issue at the [GitHub repo for the example code](https://github.com/dustinaleksiuk/recordstore). I'd also like to know of anything that was unclear about this writeup so I can improve it.
 
