@@ -14,11 +14,11 @@ In other words, I want to add or remove a child row without going to the databas
 
 It is also important that validation errors show up on the correct row using the built-in functionality provided by the framework. No hackery. I wanted to work *with* the framework, not around it.
 
-As a new LiveView user, I found this surprisingly difficult to learn to do. From researching, asking questions, and reading the [Elixir forum](https://elixirforum.com/), I learned I wasn't alone.
+As a new LiveView user, I found this surprisingly difficult to learn to do. There are a lot of small parts that had to come together. It was easy for me to start fighting the framework and going down wrong paths.
 
 ## The Sample App
 
-The [sample app](https://github.com/dustinaleksiuk/recordstore) is a LiveView website that stores albums and tracks for the album. The edit form lets the user edit the album, and add and remove tracks.
+The [sample app](https://github.com/dustinaleksiuk/recordstore) is a LiveView website that stores albums and album tracks. The edit form lets the user edit the album, and add and remove tracks.
 
 ## Key Concepts and Functions
 
@@ -58,7 +58,7 @@ has_many(:tracks, Track,
 )
 {% endhighlight %}
 
-We also need a cast_assoc for the tracks:
+We also need a `cast_assoc` for the tracks:
 
 {% highlight elixir %}
 def changeset(album, attrs) do
@@ -71,7 +71,7 @@ end
 
 ### The Track (Child) Schema
 
-The tracks are represented by the track schema in `lib/recordstore/albums/track.ex`. The important part here is a virtual temp_id field. This field will store a temporary ID to allow us to remove tracks that haven't been saved yet.
+The tracks are represented by the track schema in `lib/recordstore/albums/track.ex`. The important part here is a virtual `temp_id` field. This field stores a temporary ID to allow us to remove tracks that haven't been saved yet.
 
 {% highlight elixir %}
 field :temp_id, :string, virtual: true
@@ -79,11 +79,11 @@ field :temp_id, :string, virtual: true
     
 ### The LiveView
 
-The LiveView file at `lib/recordstore_web/live/album_live/edit.ex` and its associated heex template are where all the action is.
+The good stuff is in the LiveView file at `lib/recordstore_web/live/album_live/edit.ex` and its associated heex template.
 
 #### Loading the Album
 
-When the form loads and the album is loaded into memory as a struct, the first thing I do is loop through the tracks and set a temp id on each one so that we can remove unsaved tracks.
+When the form loads and the album is loaded into memory as a struct, the first thing I do is loop through the tracks and set a temp id on each one so that we can identify them for removal. Preexisting tracks have their own id from the database but using the `temp_id` field for both saved and unsaved tracks makes the code much simpler.
 
 {% highlight elixir %}
 defp preload_temp_ids(album) do
@@ -112,7 +112,7 @@ end
 
 #### Removing a Track
 
-To remove a track, the event needs to grab the list of tracks and remove the one that the user clicked on, and then set the list back onto the album changeset.
+To remove a track, the event needs to grab the list of tracks from the changeset, remove the one that the user clicked on, and then set the list back onto the album changeset.
 
 {% highlight elixir %}
 def handle_event("remove-track", %{"temp-id" => temp_id}, %{assigns: assigns} = socket) do
