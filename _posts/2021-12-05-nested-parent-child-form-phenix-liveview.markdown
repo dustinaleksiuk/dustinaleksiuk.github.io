@@ -2,7 +2,7 @@
 layout: post
 title:  "Creating a Nested Parent-Child Form in Phoenix LiveView"
 date:   2021-12-05 10:41:04 -0700
-categories: elixir liveview phoenix
+categories: liveview
 ---
 ## The Backstory
 
