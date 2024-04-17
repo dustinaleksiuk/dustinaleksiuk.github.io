@@ -5,7 +5,6 @@ date:   2021-12-05 10:41:04 -0700
 categories: liveview
 ---
 
-*A special thanks to [Rowland Carlson](https://row.land/) for taking the time to discuss the issues I was having, test the sample app, and submit some fixes.*
 ## The Backstory
 
 One of my first tasks recently as a new Elixir and Phoenix LiveView developer was to write a SPA-style form that would allow the user to add and remove child records from a parent and save the changes on a single page with a single save button. The user should also be able to cancel and abandon their changes. 
@@ -130,7 +129,7 @@ end
 
 The LiveView `phx-change` event fires on every action or keystroke in the app. Often all one would do here is run the form params through the changeset function so that the validation is up to date. However, when the last track is removed, the album form params no longer have the `tracks:` field, so the changeset doesn't know that there are changes.
 
-To solve this, I added a `process_params` function that sets the `tracks:` field to an empty map. It is called at the top of the `change` event as well as the `save` event. Thanks again to [Rowland](https://row.land/) for finding this problem and submitting a fix.
+To solve this, I added a `process_params` function that sets the `tracks:` field to an empty map. It is called at the top of the `change` event as well as the `save` event.
 
 *Note:* I'm mildly uncomfortable with this part of the code because I don't like having to mess with the form params unless absolutely necessary. However in this situation I think it's the most elegant solution.
 
